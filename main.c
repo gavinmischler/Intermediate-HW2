@@ -102,46 +102,31 @@ int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char inpu
 	int idx2 = end;
 	int mid = (idx1 + idx2 -1)/2;
 	while (idx1 <= idx2 && !found) {
-		mid = (idx1 + idx2 -1)/2;
-		if (strcmp(input, queries[mid]) == 0) {
-			found = 1;
+		if ((idx1+idx2)%2 == 0) {
+			mid = (idx1 + idx2)/2;
+		} else {
+			mid = (idx1 + idx2 -1)/2;
 		}
-		if (strcmp(input, queries[mid]) > 0) {
+
+		printf("idx1: %i\n mid: %i\n idx2: %i\n", idx1,mid, idx2);
+		if (strcmp(input, queries[mid]) == 0 || idx1 == idx2) {
+			found = 1;
+		} else if (strcmp(input, queries[mid]) > 0) {
 			idx1 = mid + 1;
 		} else {
 			idx2 = mid - 1;
 		}
 	}
-	printf("start is %i mid is %i end is %i\n", idx1,mid, idx2);
-	printf("%s\n",queries[idx1]);
-	return idx1;
+	if (mid < idx1) {
+		mid = idx1;
+	}
+
+	printf("found = %i\n", found);
+	printf("idx1 is %i mid is %i idx2 is %i\n", idx1,mid, idx2);
+	printf("%s\n",queries[mid]);
+	return mid;
 
 }
-
-// int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char input[MAX_QUERY_LENGTH]) {
-// 	//check for length of 1
-// 	if(end-start <= 1) {
-// 		return start;
-// 	}
-// 	if (end >= 1) {
-// 		int mid = (start + (end))/2;
-// 		printf("middle is %i\n", mid);
-// 		printf("start is %i\n", start);
-// 		printf("end is %i\n", end);
-// 		printf("middle string is %s\n",queries[mid]);
-// 		printf("strcmp is %i\n", strcmp(input, queries[mid]));
-// 		if (strcmp(input, queries[mid]) == 0) { // base case if perfect
-// 			return mid;
-// 		}
-// 		if (strcmp(input, queries[mid+1]))
-// 		if (strcmp(input, queries[mid]) > 0 ) { //input is on the right side of the middle query
-// 			return binarysearch(queries, mid, end, input);
-// 		}
-// 		return binarysearch(queries, start, mid, input); //input is on the left side of the middle query
-// 	}
-// 	return -1; //if didn't find it
-//
-// }
 
 
 /**
