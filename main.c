@@ -93,20 +93,55 @@ void insertionsort(char queries[][MAX_QUERY_LENGTH], unsigned long weights[], in
 }
 
 int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char input[MAX_QUERY_LENGTH]) {
-	//check for length of 1
-	if (end >= 1) {
-		int mid = start + (end - 1)/2;
-		if (strcmp(queries[mid], input) == 0) { // base case if perfect
-			return mid;
-		}
-		if (strcmp(queries[mid],input) > 0 ) { //input is on the right side of the middle query
-			return binarysearch(queries, mid, end, input);
-		}
-		return binarysearch(queries, start, mid, input); //input is on the left side of the middle query
+	if (start == end) {
+		printf("returning from base case");
+		return start; //base case, length of array is 1
 	}
-	return -1; //if didn't find it
+	int found = 0;
+	int idx1 = start;
+	int idx2 = end;
+	int mid = (idx1 + idx2 -1)/2;
+	while (idx1 <= idx2 && !found) {
+		mid = (idx1 + idx2 -1)/2;
+		if (strcmp(input, queries[mid]) == 0) {
+			found = 1;
+		}
+		if (strcmp(input, queries[mid]) > 0) {
+			idx1 = mid + 1;
+		} else {
+			idx2 = mid - 1;
+		}
+	}
+	printf("start is %i mid is %i end is %i\n", idx1,mid, idx2);
+	printf("%s\n",queries[idx1]);
+	return idx1;
 
 }
+
+// int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char input[MAX_QUERY_LENGTH]) {
+// 	//check for length of 1
+// 	if(end-start <= 1) {
+// 		return start;
+// 	}
+// 	if (end >= 1) {
+// 		int mid = (start + (end))/2;
+// 		printf("middle is %i\n", mid);
+// 		printf("start is %i\n", start);
+// 		printf("end is %i\n", end);
+// 		printf("middle string is %s\n",queries[mid]);
+// 		printf("strcmp is %i\n", strcmp(input, queries[mid]));
+// 		if (strcmp(input, queries[mid]) == 0) { // base case if perfect
+// 			return mid;
+// 		}
+// 		if (strcmp(input, queries[mid+1]))
+// 		if (strcmp(input, queries[mid]) > 0 ) { //input is on the right side of the middle query
+// 			return binarysearch(queries, mid, end, input);
+// 		}
+// 		return binarysearch(queries, start, mid, input); //input is on the left side of the middle query
+// 	}
+// 	return -1; //if didn't find it
+//
+// }
 
 
 /**
@@ -147,20 +182,17 @@ int main() {
   fclose(fp);
   // END OF DO NOT MODIFY
 
-	int getanother = 1;
-	while (getanother) {
-		char input[MAX_QUERY_LENGTH];
-		printf("Input a word to return the autocomplete options (enter 00 to stop): ");
-		fgets(input, MAX_QUERY_LENGTH, stdin);
-		printf("%s\n", input);
-		if (input[0] == '0' && input[1] == '0') {
-			getanother = 0;
-		}
+	char input[MAX_QUERY_LENGTH];
+	char input_line[MAX_QUERY_LENGTH];
+
+	while (fgets(input_line, MAX_QUERY_LENGTH, stdin) != NULL) { //until EOF is found
+
+		sscanf(input_line, "%s", input);
+
+		printf(" the input is %s\n", input);
+
 		int location = binarysearch(queries, 0, num_queries, input);
-		char the[] = {'t','h','e'};
-		printf("%i\n", strcmp(input,the));
-		printf("%lu\n", sizeof(input));
-		printf("%i\n", location);
+		printf("location found at %i\n", location);
 
 
 
