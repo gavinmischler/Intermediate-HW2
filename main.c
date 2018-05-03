@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // define a max query length
 #define MAX_QUERY_LENGTH 255
@@ -94,7 +95,7 @@ void insertionsort(char queries[][MAX_QUERY_LENGTH], unsigned long weights[], in
 
 int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char input[MAX_QUERY_LENGTH]) {
 	if (start == end) {
-		printf("returning from base case");
+		// printf("returning from base case");
 		return start; //base case, length of array is 1
 	}
 	int found = 0;
@@ -108,7 +109,7 @@ int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char inpu
 			mid = (idx1 + idx2 -1)/2;
 		}
 
-		printf("idx1: %i\n mid: %i\n idx2: %i\n", idx1,mid, idx2);
+		// printf("idx1: %i\n mid: %i\n idx2: %i\n", idx1,mid, idx2);
 		if (strcmp(input, queries[mid]) == 0 || idx1 == idx2) {
 			found = 1;
 		} else if (strcmp(input, queries[mid]) > 0) {
@@ -120,14 +121,39 @@ int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char inpu
 	if (mid < idx1) {
 		mid = idx1;
 	}
-
-	printf("found = %i\n", found);
-	printf("idx1 is %i mid is %i idx2 is %i\n", idx1,mid, idx2);
-	printf("%s\n",queries[mid]);
+	// printf("found = %i\n", found);
+	// printf("idx1 is %i mid is %i idx2 is %i\n", idx1,mid, idx2);
+	// printf("%s\n",queries[mid]);
 	return mid;
-
 }
 
+/*
+*  Checks if str1 begins with str2
+*/
+bool beginsWith(char str1[MAX_QUERY_LENGTH], char str2[MAX_QUERY_LENGTH]) {
+	int str1_sz = strlen(str1);
+	int str2_sz = strlen(str2);
+	if (str2_sz > str1_sz) { // The first string can't begin with the second because the second is longer
+		return false;
+	}
+	for (int i = 0; i < str2_sz; i++) { // Make sure each character is the same
+		if (str1[i] != str2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+int getTrueStart(char queries[][MAX_QUERY_LENGTH], int possible_loc, char input[MAX_QUERY_LENGTH]) {
+	if (beginsWith(queries[possible_loc], input)) {
+		return possible_loc;
+	} else if (possible_loc != 0 && beginsWith(queries[possible_loc-1], input)) { // Check if the item before is the right one
+		return possible_loc-1;
+	} else if (possible_loc != sizeof(queries)/sizeof(queries[0]-1) && beginsWith(queries[possible_loc+1], input)) {
+		return possible_loc+1;
+	}
+	return -1; // This should never happen
+}
 
 /**
    Main function
@@ -169,17 +195,25 @@ int main() {
 
 	char input[MAX_QUERY_LENGTH];
 	char input_line[MAX_QUERY_LENGTH];
+	int start_loc = 0;
+	//int end_loc = 0;
 
 	while (fgets(input_line, MAX_QUERY_LENGTH, stdin) != NULL) { //until EOF is found
 
 		sscanf(input_line, "%s", input);
 
-		printf(" the input is %s\n", input);
+		printf("Input is:   %s\n", input);
 
-		int location = binarysearch(queries, 0, num_queries, input);
-		printf("location found at %i\n", location);
+		int possible_loc = binarysearch(queries, 0, num_queries, input);
+		printf("Found word:   %s\n", queries[possible_loc]);
 
-
+		start_loc = getTrueStart(queries, possible_loc, input);
+		if (start_loc < 0) {
+			printf("Error: Start was found to be less than 0");
+		} else {
+			printf("The real word should be:  %s\n", queries[start_loc]);
+		}
+		// getAutoCompleteOptions(queries, )
 
 	}
 
