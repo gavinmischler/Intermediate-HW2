@@ -95,7 +95,6 @@ void insertionsort(char queries[][MAX_QUERY_LENGTH], unsigned long weights[], in
 
 int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char input[MAX_QUERY_LENGTH]) {
 	if (start == end) {
-		// printf("returning from base case");
 		return start; //base case, length of array is 1
 	}
 	int found = 0;
@@ -109,7 +108,6 @@ int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char inpu
 			mid = (idx1 + idx2 -1)/2;
 		}
 
-		// printf("idx1: %i\n mid: %i\n idx2: %i\n", idx1,mid, idx2);
 		if (strcmp(input, queries[mid]) == 0 || idx1 == idx2) {
 			found = 1;
 		} else if (strcmp(input, queries[mid]) > 0) {
@@ -121,9 +119,6 @@ int binarysearch(char queries[][MAX_QUERY_LENGTH], int start, int end, char inpu
 	if (mid < idx1) {
 		mid = idx1;
 	}
-	// printf("found = %i\n", found);
-	// printf("idx1 is %i mid is %i idx2 is %i\n", idx1,mid, idx2);
-	// printf("%s\n",queries[mid]);
 	return mid;
 }
 
@@ -145,14 +140,77 @@ bool beginsWith(char str1[MAX_QUERY_LENGTH], char str2[MAX_QUERY_LENGTH]) {
 }
 
 int getTrueStart(char queries[][MAX_QUERY_LENGTH], int possible_loc, char input[MAX_QUERY_LENGTH]) {
-	if (beginsWith(queries[possible_loc], input)) {
+	char before[MAX_QUERY_LENGTH];
+	strcpy(before, queries[possible_loc-1]);
+	char at[MAX_QUERY_LENGTH];
+	strcpy(at, queries[possible_loc]);
+	char after[MAX_QUERY_LENGTH];
+	strcpy(after,queries[possible_loc+1]);
+	if (beginsWith(queries[possible_loc], input)) { // Check if input is in the possible_loc
 		return possible_loc;
-	} else if (possible_loc != 0 && beginsWith(queries[possible_loc-1], input)) { // Check if the item before is the right one
+		// Check if input is in the string before
+	} else if (possible_loc > 0 && beginsWith(queries[possible_loc-1], input)) { // Check if the item before is the right one
 		return possible_loc-1;
-	} else if (possible_loc != sizeof(queries)/sizeof(queries[0]-1) && beginsWith(queries[possible_loc+1], input)) {
+		// Check if input is in the string after
+	} else if (beginsWith(queries[possible_loc+1], input)) {
 		return possible_loc+1;
 	}
 	return -1; // This should never happen
+}
+
+int getEndLoc(char queries[][MAX_QUERY_LENGTH], int start_loc, char input[MAX_QUERY_LENGTH], int num_queries) {
+	int i = start_loc;
+	while (i <= num_queries && beginsWith(queries[i], input)) {
+		i++;
+	}
+	return (i-1);
+}
+
+// Populate the output arrays with the autocomplete options and the weights that correspond
+void getAutoCompleteOptions(char queries[][MAX_QUERY_LENGTH], int start_loc, int end_loc,
+	 char outputs[][MAX_QUERY_LENGTH], unsigned long weights[], unsigned long output_weights[]) {
+	for (int i = 0; start_loc+i < end_loc+1; i++) {
+		strcpy(outputs[i], queries[start_loc+i]); // Copy from queries to the outputs
+		output_weights[i] = weights[start_loc+i]; // Copy the corresponding
+	}
+}
+
+void frequencySort(char outputs[][MAX_QUERY_LENGTH], unsigned long output_weights[], int num_outputs) {
+	if (num_outputs == 1) { // If there is only one item, don't need to sort it
+		return;
+	}
+	// Insertion sort based on the weights (frequencies)
+	char unsorted_output[MAX_QUERY_LENGTH];
+	char sorted_output[MAX_QUERY_LENGTH];
+	for (int i = 1; i < num_outputs; i++) {
+		strcpy(unsorted_output, outputs[i]);
+		unsigned long unsorted_weight = output_weights[i];
+		for (int j = i-1; j >= 0; j--) {
+			strcpy(sorted_output, outputs[j]);
+			unsigned long sorted_weight = output_weights[j];
+			if (unsorted_weight > sorted_weight) { // Unsorted element is greater than sorted one
+				strcpy(outputs[j+1], sorted_output); // Shift the "sorted" stuff one slot right
+				output_weights[j+1] = sorted_weight;
+			} else {
+				strcpy(outputs[j+1], unsorted_output); // Shift the "sorted" stuff one slot right
+				output_weights[j+1] = unsorted_weight;
+				break;
+			}
+			if (j == 0) {
+				strcpy(outputs[0],unsorted_output);
+				output_weights[0] = unsorted_weight;
+			}
+
+		}
+	}
+}
+
+void printUpToFive(char outputs[][MAX_QUERY_LENGTH], unsigned long output_weights[], int num_outputs) {
+	int i = 0;
+	while (i < 5 && i < num_outputs) {
+		printf("%s: %lu\n", outputs[i], output_weights[i]);
+		i++;
+	}
 }
 
 /**
@@ -196,33 +254,51 @@ int main() {
 	char input[MAX_QUERY_LENGTH];
 	char input_line[MAX_QUERY_LENGTH];
 	int start_loc = 0;
-	//int end_loc = 0;
+	int end_loc = 0;
 
 	while (fgets(input_line, MAX_QUERY_LENGTH, stdin) != NULL) { //until EOF is found
 
 		sscanf(input_line, "%s", input);
 
-		printf("Input is:   %s\n", input);
-
 		int possible_loc = binarysearch(queries, 0, num_queries, input);
-		printf("Found word:   %s\n", queries[possible_loc]);
 
+		// Since the search could be 1 off, check the surrounding ones and find the true start location
 		start_loc = getTrueStart(queries, possible_loc, input);
 		if (start_loc < 0) {
-			printf("Error: Start was found to be less than 0");
-		} else {
-			printf("The real word should be:  %s\n", queries[start_loc]);
+			printf("Error: Start was found to be less than 0\n");
 		}
-		// getAutoCompleteOptions(queries, )
 
+		// Find the index of the last query that works
+		end_loc = getEndLoc(queries, start_loc, input, num_queries);
+
+		int num_outputs = end_loc - start_loc + 1; // Calculate number of possible autocomplet outputs
+		char outputs[num_outputs][MAX_QUERY_LENGTH]; // The possible string outputs
+		unsigned long output_weights[num_outputs]; // The weights of the possible outputs
+
+		// Write the possible options to the outputs array
+		getAutoCompleteOptions(queries, start_loc, end_loc, outputs, weights, output_weights);
+		// for (int i = 0; i < num_outputs; i++) {
+		// 	printf("%s : %lu\n", outputs[i], output_weights[i]);
+		// }
+
+		// printf("First word: %s  weight: %lu\n", outputs[0], output_weights[0]);
+		// for (int i = 0; i < (sizeof(outputs)/sizeof(outputs[0])); i++) {
+		// 	printf("%s : %lu\n", outputs[i], output_weights[i]);
+		// }
+
+
+
+		// Sort the outputs by frequency
+		frequencySort(outputs, output_weights, num_outputs);
+		// printf("num_outputs: %i\n", num_outputs);
+		// for (int i = 0; i < num_outputs; i++) {
+		// 	printf("%s : %lu\n", outputs[i], output_weights[i]);
+		// }
+
+		// Pick the top 5
+		printUpToFive(outputs, output_weights, num_outputs);
 	}
 
-	// while loop to take in user input for query desired, until they don't want to any more
-	// binary search through the sorted array
-	// find the subarray of matching possible num_queries
-	// sort by weight
-	// output the top 5 operations
-	// continue while loop by asking for input again
 
   return 0;
 }
